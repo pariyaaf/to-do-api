@@ -1,1 +1,4 @@
-.for-me.txt
+.CONTRIBUTING.MD
+.flaskenv
+.env
+.db.py
