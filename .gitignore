@@ -1,4 +1,3 @@
 .CONTRIBUTING.MD
 .flaskenv
 .env
-.db.py
