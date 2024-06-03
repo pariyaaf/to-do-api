@@ -88,6 +88,16 @@ class UserLogout(MethodView):
         return {"message" : "successfully logged out"}, 200
 
 
+@blp.route("/user/refresh")
+class UserRefresh(MethodView):
+    @jwt_required(refresh=True)
+    def post(self):
+        current_user = get_jwt_identity()
+        new_token = create_refresh_token(identity=current_user, fresh=False)
+        jti = get_jwt.add()["jti"]
+        BLOCKLIST.add(jti)
+        return {"access_token" : new_token}, 200
+
 
 @blp.route("/users")
 class Admin(MethodView):
