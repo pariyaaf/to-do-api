@@ -1,5 +1,5 @@
 from flask.views import MethodView
-from flask_smorest import Blueprint, abort
+from flask_smorest import Blueprint, abort, current_api
 from schemas.user import UserSchema, UserUpdateSchema
 from models import UserModel
 from db import db
@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity, create_refresh_token
 from datetime import datetime
+from blocklist import BLOCKLIST
 
 
 blp = Blueprint("Users", "users", description="Operations on users")
@@ -23,6 +24,7 @@ class User(MethodView):
     @blp.response(201, UserSchema)
     def put(cls, user_id):
         pass
+
 
 
 @blp.route("/user/register")
@@ -77,9 +79,19 @@ class UserLogin(MethodView):
 
 
 
+@blp.route("/user/logout")
+class UserLogout(MethodView):
+    @jwt_required()
+    def post(self):
+        jti = (get_jwt)()["jti"]
+        BLOCKLIST.add(jti)
+        return {"message" : "successfully logged out"}, 200
+
+
+
 @blp.route("/users")
 class Admin(MethodView):
-
+    @jwt_required()
     @blp.response(200, UserSchema(many=True))
     def get(cls):
         users = UserModel.query.all()
