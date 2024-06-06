@@ -7,7 +7,7 @@ class ListModel(BaseModel):
     __tablename__ ="lists"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(60), unique=False, nullable=False)
+    name = db.Column(db.String(60), unique=True, nullable=False)
     color = db.Column(db.String(120), unique=False, nullable=True)
     is_active = db.Column(db.Boolean, unique=False, nullable=False)
 
