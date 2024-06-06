@@ -99,10 +99,3 @@ class UserRefresh(MethodView):
         return {"access_token" : new_token}, 200
 
 
-@blp.route("/users")
-class Admin(MethodView):
-    @jwt_required()
-    @blp.response(200, UserSchema(many=True))
-    def get(cls):
-        users = UserModel.query.all()
-        return users
