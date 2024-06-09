@@ -50,8 +50,9 @@ class List(MethodView):
             lists = ListModel.query.filter_by(user_id=user.id).all()
             return lists
         
-        except:
-            abort(520, message="error happend please try egain!")
+        except Exception as e:
+            abort(500, message=f"error => {e} !")
+
 
 
 
@@ -71,8 +72,9 @@ class ListId(MethodView):
             
             return list
 
-        except:
-            abort(520, message="error happend please try egain!")
+        except Exception as e:
+            abort(500, message=f"error => {e} !")
+
 
 
     @jwt_required(refresh=True)
@@ -118,5 +120,6 @@ class ListId(MethodView):
             db.session.commit()
             return {"message": "list deleted"}
             
-        except:
-            abort(500, message="error")
+        except Exception as e:
+            abort(500, message=f"error => {e} !")
+
