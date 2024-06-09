@@ -54,18 +54,14 @@ class UserRegister(MethodView):
             abort(400, message="user already exists!")
 
         except SQLAlchemyError:
-            abort(500, message="An erro occurred while inserting the new data!")
+            abort(500, message="An error occurred while inserting the new data!")
 
-        except:
-            abort(520, message="error!")
 
         return {"message": "user created successfully"}, 201  
 
 
-
 @blp.route("/user/login")
 class UserLogin(MethodView):
-
     @blp.arguments(UserSchema)
     def post(cls, user_data):
         user = UserModel.query.filter(user_data["username"] == UserModel.username).first()
