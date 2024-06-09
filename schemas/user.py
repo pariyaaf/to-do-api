@@ -15,5 +15,7 @@ class UserUpdateSchema(Schema):
     name = fields.Str()
     email = fields.Str()
     username = fields.Str()
-    password = fields.Str()
-    is_admin = fields.Boolean()
+
+class PaaUpdateSchema(Schema):
+    new_password = fields.Str(required=True)
+    old_password = fields.Str(required=True)
