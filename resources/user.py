@@ -1,6 +1,6 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort, current_api
-from schemas.user import UserSchema, UserUpdateSchema
+from schemas.user import UserSchema, UserUpdateSchema, PaaUpdateSchema
 from models import UserModel
 from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -11,21 +11,6 @@ from blocklist import BLOCKLIST
 
 
 blp = Blueprint("Users", "users", description="Operations on users")
-
-@blp.route("/user/<int:user_id>")
-class User(MethodView):
-
-    @blp.response(200, UserSchema)
-    def get(cls, user_id):
-        user = UserModel.query.get_or_404(user_id)
-        return user
-
-    @blp.arguments(UserUpdateSchema)
-    @blp.response(201, UserSchema)
-    def put(cls, user_id):
-        pass
-
-
 
 @blp.route("/user/register")
 class UserRegister(MethodView):
@@ -77,7 +62,7 @@ class UserLogin(MethodView):
 
 @blp.route("/user/logout")
 class UserLogout(MethodView):
-    @jwt_required()
+    @jwt_required(refresh=True)
     def post(self):
         jti = (get_jwt)()["jti"]
         BLOCKLIST.add(jti)
@@ -95,3 +80,71 @@ class UserRefresh(MethodView):
         return {"access_token" : new_token}, 200
 
 
+@blp.route("/user")
+class User(MethodView):
+
+    @jwt_required()
+    @blp.response(200, UserSchema)
+    def get(cls):
+        user_id = get_jwt_identity()
+        user = UserModel.query.get_or_404(user_id)
+        return user
+
+    @jwt_required(refresh=True)
+    @blp.arguments(UserUpdateSchema)
+    @blp.response(201, UserSchema)
+    def put(cls, user_data):
+        user_id = get_jwt_identity()
+        user = UserModel.query.get_or_404(user_id)
+
+        if 'name' in user_data:
+            user.name = user_data["name"]
+
+        if 'username' in user_data:
+            if UserModel.query.filter(UserModel.username == user_data["username"], UserModel.id != user_id).first():
+                abort(409, message="username token, try again!")
+            else:
+                user.username = user_data["username"]
+            
+        if 'email' in user_data:
+            if UserModel.query.filter(UserModel.email == user_data["email"], UserModel.id != user_id).first():
+                abort(409, message="email belong to another account!")
+            else:
+                user.email = user_data["email"]
+                
+        user.updated = datetime.now()
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            return user
+
+        except Exception as e:
+            abort(500, message=f"error => {e} !")
+
+
+
+@blp.route("/user/password")
+class UserPassword(MethodView):
+    @jwt_required(refresh=True)
+    @blp.arguments(PaaUpdateSchema)
+    def post(self, pass_data):
+        user_id = get_jwt_identity()
+        user = UserModel.query.get_or_404(user_id)
+        if pbkdf2_sha256.verify(pass_data["old_password"], user.password):
+            new_password = pbkdf2_sha256.hash(str(pass_data["new_password"]))
+
+            try:
+                user.password = new_password
+                user.updated = datetime.now()
+                db.session.add(user)
+                db.session.commit()
+                return {"message" : "password update successfully !"}, 201
+            
+            except Exception as e:
+                abort(500, message=f"error => {e} !")
+        
+        else:
+            abort(409, message="password incorrect!")
+
+        
