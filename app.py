@@ -4,10 +4,12 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 from db import db
-from os import environ 
+from os import environ
+
 from resources.user import blp as UserBlueprint
 from resources.list import blp as ListBlueprint
 from resources.admin import blp as AdminBlueprint
+from resources.task import blp as TaskBlueprint
 
 
 from datetime import timedelta
@@ -111,6 +113,7 @@ def create_app():
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(ListBlueprint)
     api.register_blueprint(AdminBlueprint)
+    api.register_blueprint(TaskBlueprint)
 
 
     return app
