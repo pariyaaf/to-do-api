@@ -1,6 +1,6 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort, current_api
-from schemas.user import UserSchema, UserUpdateSchema, PaaUpdateSchema
+from schemas.user import UserSchema, UserUpdateSchema, PassUpdateSchema
 from models import UserModel
 from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -127,7 +127,7 @@ class User(MethodView):
 @blp.route("/user/password")
 class UserPassword(MethodView):
     @jwt_required(refresh=True)
-    @blp.arguments(PaaUpdateSchema)
+    @blp.arguments(PassUpdateSchema)
     def post(self, pass_data):
         user_id = get_jwt_identity()
         user = UserModel.query.get_or_404(user_id)
