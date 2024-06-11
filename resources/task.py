@@ -1,3 +1,4 @@
+from flask import request 
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from schemas.todo import TaskSchema, UpdateTaskSchema
@@ -6,6 +7,7 @@ from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from public_methods import str_to_bool
 
 
 blp = Blueprint("Tasks", "tasks", description="Operations on tasks")
@@ -16,12 +18,12 @@ class Task(MethodView):
     @blp.arguments(TaskSchema)
     @blp.response(200, TaskSchema)
     def post(self, task_data, list_id):
-        user = UserModel.query.get(get_jwt_identity())
+        user = UserModel.get(get_jwt_identity())
 
         if user is None:
             abort(404, message="user not found!")
 
-        existing_task = TaskModel.query.filter_by(
+        existing_task = TaskModel.filter_by(
             list_id=list_id, name=task_data["name"]).first()
         
         if existing_task:
@@ -56,8 +58,10 @@ class Task(MethodView):
     def get(self, list_id):
         try:
             user_id = get_jwt_identity()
-            user = UserModel.query.get_or_404(user_id)
-            tasks = TaskModel.query.filter_by(list_id=list_id).all()
+            user = UserModel.get_or_404(user_id)
+            param_1 = request.args.get('with_deleted', 'false')
+            with_deleted = str_to_bool(param_1)
+            tasks = TaskModel.filter_by(list_id=list_id, with_deleted=with_deleted).all()
             return tasks
         
         except Exception as e:
@@ -73,14 +77,15 @@ class TaskId(MethodView):
     def get(self, list_id, task_id):
         try:
             user_id = get_jwt_identity()
-            user = UserModel.query.get_or_404(user_id)
-            task = TaskModel.query.filter_by(list_id=list_id, id=task_id).first()
+            user = UserModel.get_or_404(user_id)
+            param_1 = request.args.get('with_deleted', 'false')
+            with_deleted = str_to_bool(param_1)
+            task = TaskModel.filter_by(list_id=list_id, id=task_id, with_deleted=with_deleted).first()
             
             if not task:
                 abort(404, message="task not found!")
-            
             return task
-
+        
         except Exception as e:
             abort(500, message=f"error => {e} !")
 
@@ -90,8 +95,8 @@ class TaskId(MethodView):
     @blp.response(201, TaskSchema())
     def put(self, task_data, list_id, task_id):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
-        task = TaskModel.query.filter_by(list_id=list_id, id=task_id).first()
+        user = UserModel.get_or_404(user_id)
+        task = TaskModel.filter_by(list_id=list_id, id=task_id).first()
         
         if not task:
             abort(404, message="task not found!")
@@ -127,12 +132,10 @@ class TaskId(MethodView):
     @jwt_required(refresh=True)
     def delete(self, list_id, task_id):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
-        task = TaskModel.query.get_or_404(task_id)
-        return task
+        user = UserModel.get_or_404(user_id)
+        task = TaskModel.get_or_404(task_id)
         try:
-            db.session.delete(task)
-            db.session.commit()
+            TaskModel.soft_delete(task)
             return {"message": "task deleted"}
             
         except Exception as e:
@@ -146,13 +149,13 @@ class UserTasks(MethodView):
     @blp.response(200, TaskSchema(many=True))
     def get(self):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
+        user = UserModel.get_or_404(user_id)
         try:
-            list_ids_query = ListModel.query.filter_by(user_id=user_id).with_entities(ListModel.id).all()
+            list_ids_query = ListModel.filter_by(user_id=user_id).with_entities(ListModel.id).all()
             list_ids = [item.id for item in list_ids_query]
-
-            tasks = TaskModel.query.filter(TaskModel.list_id.in_(list_ids)).all()
+            param_1 = request.args.get('with_deleted', 'false')
+            with_deleted = str_to_bool(param_1)
+            tasks = TaskModel.filter(TaskModel.list_id.in_(list_ids, with_deleted=with_deleted)).all()
             return tasks
-        
         except Exception as e:
             abort(500, message=f"error => {e} !")
