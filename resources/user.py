@@ -18,7 +18,7 @@ class UserRegister(MethodView):
     @blp.arguments(UserSchema)
     # @blp.response(201, UserSchema)
     def post(cls, user_data):
-        if UserModel.query.filter(UserModel.username == user_data["username"]).first():
+        if UserModel.filter(UserModel.username == user_data["username"], with_deleted=True).first():
             abort(409, message="username is already exists!")
 
         user = UserModel(
@@ -41,7 +41,6 @@ class UserRegister(MethodView):
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the new data!")
 
-
         return {"message": "user created successfully"}, 201  
 
 
@@ -49,7 +48,7 @@ class UserRegister(MethodView):
 class UserLogin(MethodView):
     @blp.arguments(UserSchema)
     def post(cls, user_data):
-        user = UserModel.query.filter(user_data["username"] == UserModel.username).first()
+        user = UserModel.filter(user_data["username"] == UserModel.username).first()
         
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
             access_token = create_access_token(identity=user.id, fresh=True)
@@ -87,7 +86,7 @@ class User(MethodView):
     @blp.response(200, UserSchema)
     def get(cls):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
+        user = UserModel.get_or_404(user_id)
         return user
 
     @jwt_required(refresh=True)
@@ -95,19 +94,19 @@ class User(MethodView):
     @blp.response(201, UserSchema)
     def put(cls, user_data):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
+        user = UserModel.get_or_404(user_id)
 
         if 'name' in user_data:
             user.name = user_data["name"]
 
         if 'username' in user_data:
-            if UserModel.query.filter(UserModel.username == user_data["username"], UserModel.id != user_id).first():
+            if UserModel.filter(UserModel.username == user_data["username"], UserModel.id != user_id, with_deleted=True).first():
                 abort(409, message="username token, try again!")
             else:
                 user.username = user_data["username"]
             
         if 'email' in user_data:
-            if UserModel.query.filter(UserModel.email == user_data["email"], UserModel.id != user_id).first():
+            if UserModel.filter(UserModel.email == user_data["email"], UserModel.id != user_id, with_deleted=True).first():
                 abort(409, message="email belong to another account!")
             else:
                 user.email = user_data["email"]
@@ -123,6 +122,17 @@ class User(MethodView):
             abort(500, message=f"error => {e} !")
 
 
+    @jwt_required(refresh=True)
+    def delete(self):
+        user_id = get_jwt_identity()
+        user = UserModel.get_or_404(user_id)
+        username = user.username
+        try:
+            UserModel.soft_delete(user)
+            return {"message": f"user {username} deleted successfully"}
+        
+        except Exception as e:
+            abort(500, message=f"error => {e} !")
 
 @blp.route("/user/password")
 class UserPassword(MethodView):
@@ -130,7 +140,7 @@ class UserPassword(MethodView):
     @blp.arguments(PassUpdateSchema)
     def post(self, pass_data):
         user_id = get_jwt_identity()
-        user = UserModel.query.get_or_404(user_id)
+        user = UserModel.get_or_404(user_id)
         if pbkdf2_sha256.verify(pass_data["old_password"], user.password):
             new_password = pbkdf2_sha256.hash(str(pass_data["new_password"]))
 
@@ -147,4 +157,4 @@ class UserPassword(MethodView):
         else:
             abort(409, message="password incorrect!")
 
-        
+    
