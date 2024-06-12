@@ -4,6 +4,8 @@ from schemas.base_schema import BaseSchema
 
 class UserSchema(BaseSchema):
     id = fields.Int(dump_only=True)
+    updated_by = fields.Int(dump_only=True)
+    deleted_by = fields.Int(dump_only=True)
     name = fields.Str(required=False)
     email = fields.Str(required=True)
     username = fields.Str(required=True)

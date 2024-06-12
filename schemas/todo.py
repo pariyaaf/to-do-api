@@ -4,6 +4,8 @@ from schemas.base_schema import BaseSchema
 
 class PlainListSchema(BaseSchema):
     id = fields.Int(dump_only=True)
+    updated_by = fields.Int(dump_only=True)
+    deleted_by = fields.Int(dump_only=True)
     name = fields.String(required=True)
     color = fields.String()
     is_active = fields.Boolean(required=True)
@@ -11,6 +13,8 @@ class PlainListSchema(BaseSchema):
 
 class PlainTaskSchema(BaseSchema):
     id = fields.Int(dump_only=True)
+    updated_by = fields.Int(dump_only=True)
+    deleted_by = fields.Int(dump_only=True)
     name = fields.String(required=True)
     description = fields.String()
     due_date = fields.Date()
