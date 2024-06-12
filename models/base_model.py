@@ -7,15 +7,25 @@ class BaseModel(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow, nullable=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), unique=False, nullable=True)
+    deleted_by = db.Column(db.Integer, db.ForeignKey('users.id'), unique=False, nullable=True)
 
-    def soft_delete(self):
+    def soft_delete(self, deleter_id):
         self.deleted_at = datetime.utcnow()
+        self.deleted_by = deleter_id
         db.session.commit()
 
-    def restore(self):
+    def restore(self, updater_id):
         self.deleted_at = None
         self.updated_at = datetime.utcnow()
+        self.updated_by = updater_id
         db.session.commit()
+
+    def update_record(self, updater_id):
+        self.updated_at = datetime.utcnow()
+        self.updated_by = updater_id
+        db.session.commit()
+
 
 
     @classmethod
