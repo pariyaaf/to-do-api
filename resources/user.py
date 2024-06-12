@@ -101,7 +101,7 @@ class User(MethodView):
 
         if 'username' in user_data:
             if UserModel.filter(UserModel.username == user_data["username"], UserModel.id != user_id, with_deleted=True).first():
-                abort(409, message="username token, try again!")
+                abort(409, message="username belong to another account!")
             else:
                 user.username = user_data["username"]
             
@@ -110,12 +110,9 @@ class User(MethodView):
                 abort(409, message="email belong to another account!")
             else:
                 user.email = user_data["email"]
-                
-        user.updated = datetime.now()
 
         try:
-            db.session.add(user)
-            db.session.commit()
+            UserModel.update_record(user, user_id)
             return user
 
         except Exception as e:
@@ -128,7 +125,7 @@ class User(MethodView):
         user = UserModel.get_or_404(user_id)
         username = user.username
         try:
-            UserModel.soft_delete(user)
+            UserModel.soft_delete(user, user_id)
             return {"message": f"user {username} deleted successfully"}
         
         except Exception as e:

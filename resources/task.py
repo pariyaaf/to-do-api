@@ -119,11 +119,7 @@ class TaskId(MethodView):
             if 'list_id' in task_data:
                 task.list_id = task_data["list_id"]
 
-            task.updated_at =  datetime.utcnow()
-
-            db.session.add(task)
-            db.session.commit()
-
+            TaskModel.update_record(task, user_id)
             return task
         except Exception as e:
             abort(500, message=f"error => {e} !")
@@ -135,7 +131,7 @@ class TaskId(MethodView):
         user = UserModel.get_or_404(user_id)
         task = TaskModel.get_or_404(task_id)
         try:
-            TaskModel.soft_delete(task)
+            TaskModel.soft_delete(task, user_id)
             return {"message": "task deleted"}
             
         except Exception as e:

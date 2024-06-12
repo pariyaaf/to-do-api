@@ -61,9 +61,7 @@ class Admin(MethodView):
             try:
                 if user:
                     user.is_admin = bool(is_admin)
-                    user.updated = datetime.utcnow(),
-                    db.session.add(user)
-                    db.session.commit()
+                    UserModel.update_record(user, admin_id)
                     return user
 
             except Exception as e:
@@ -82,7 +80,7 @@ class Admin(MethodView):
         if admin.is_admin:
             if user and user.deleted_at is not None:
                 try:
-                    UserModel.restore(user)
+                    UserModel.restore(user, admin_id)
                     return user
                 except Exception as e:
                     abort(500, message=f"error => {e} !")
@@ -101,7 +99,7 @@ class Admin(MethodView):
 
             if user:
                 try:
-                    UserModel.soft_delete(user)
+                    UserModel.soft_delete(user, admin_id)
                     return {"message": f"user {user.username} deleted successfully"}
                 except Exception as e:
                     abort(500, message=f"error => {e} !")

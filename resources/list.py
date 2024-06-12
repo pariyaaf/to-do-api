@@ -101,11 +101,7 @@ class ListId(MethodView):
             if 'is_active' in list_data:
                 list.is_active = list_data["is_active"]
 
-            list.updated_at =  datetime.utcnow()
-
-            db.session.add(list)
-            db.session.commit()
-
+            ListModel.update_record(list, user_id)
             return list
         except Exception as e:
             abort(500, message=f"error happen please try again! \n {e}")
@@ -121,7 +117,7 @@ class ListId(MethodView):
             abort(400, message="list is active!")
 
         try:
-            ListModel.soft_delete(list)
+            ListModel.soft_delete(list, user_id)
 
             return {"message": "list deleted"}
             
