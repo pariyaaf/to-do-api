@@ -8,3 +8,4 @@ flask-jwt-extended
 passlib
 flask-migrate
 Flask-Caching
+flask_cors

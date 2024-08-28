@@ -10,6 +10,7 @@ from resources.user import blp as UserBlueprint
 from resources.list import blp as ListBlueprint
 from resources.admin import blp as AdminBlueprint
 from resources.task import blp as TaskBlueprint
+from flask_cors import CORS
 
 
 from datetime import timedelta
@@ -22,6 +23,8 @@ def create_app():
     load_dotenv()
 
     app = Flask(__name__)
+    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
+
     app.config["API_TITLE"] = "TO DO API"
     app.config["API_VERSION"] = "v1.0"
 
