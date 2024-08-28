@@ -9,3 +9,4 @@ passlib
 flask-migrate
 Flask-Caching
 flask_cors
+gunicorn
