@@ -37,7 +37,7 @@ class UpdateTaskSchema(Schema):
     list_id = fields.Int()
     name = fields.String()
     description = fields.String()
-    due_date = fields.DateTime()
+    due_date = fields.Date()
     priority = fields.Int()
     is_completed = fields.Boolean()
     category = fields.Str()
