@@ -8,6 +8,7 @@ from passlib.hash import pbkdf2_sha256
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity, create_refresh_token
 from datetime import datetime
 from blocklist import BLOCKLIST
+from flask import make_response
 
 
 blp = Blueprint("Users", "users", description="Operations on users")
@@ -41,6 +42,13 @@ class UserRegister(MethodView):
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the new data!")
 
+        access_token = create_access_token(identity=user.id, fresh=True)
+        refresh_token = create_refresh_token(identity=user.id)
+
+        response = make_response({"message": "user created successfully"})
+        response.set_cookie('access_token', access_token, httponly=True, secure=False)
+        response.set_cookie('refresh_token', refresh_token, httponly=True, secure=False)
+
         return {"message": "user created successfully"}, 201  
 
 
@@ -53,6 +61,11 @@ class UserLogin(MethodView):
         if user and pbkdf2_sha256.verify(user_data["password"], user.password):
             access_token = create_access_token(identity=user.id, fresh=True)
             refresh_token = create_refresh_token(identity=user.id)
+
+            response = make_response({"message": "Login successful"})
+            response.set_cookie('access_token', access_token, httponly=True, secure=False, path='/')
+            response.set_cookie('refresh_token', refresh_token, httponly=True, secure=False, path='/')
+
             return {"access_token" : access_token, "refresh_token" : refresh_token}
 
         abort(401, message="invalid data")
@@ -65,6 +78,11 @@ class UserLogout(MethodView):
     def post(self):
         jti = (get_jwt)()["jti"]
         BLOCKLIST.add(jti)
+
+        response = make_response({"message": "Successfully logged out"})
+        response.set_cookie('access_token', '', expires=0, httponly=True, secure=False, path='/')
+        response.set_cookie('refresh_token', '', expires=0, httponly=True, secure=False, path='/')
+
         return {"message" : "successfully logged out"}, 200
 
 
