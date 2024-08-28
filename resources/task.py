@@ -149,9 +149,14 @@ class UserTasks(MethodView):
         try:
             list_ids_query = ListModel.filter_by(user_id=user_id).with_entities(ListModel.id).all()
             list_ids = [item.id for item in list_ids_query]
-            param_1 = request.args.get('with_deleted', 'false')
+
+            param_1 = request.args.get('with_deleted', False)
             with_deleted = str_to_bool(param_1)
-            tasks = TaskModel.filter(TaskModel.list_id.in_(list_ids, with_deleted=with_deleted)).all()
+
+            tasks_query = TaskModel.filter(TaskModel.list_id.in_(list_ids), with_deleted=with_deleted)
+            tasks = tasks_query.all()
+
             return tasks
         except Exception as e:
             abort(500, message=f"error => {e} !")
+
